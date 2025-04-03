@@ -1,0 +1,24 @@
+The directory `/laravelPair/laravelPair/app/Http/Requests` is intended to contain form request classes that encapsulate validation logic. Since you requested the contents of this directory, I will create a sample request class file named `ExampleRequest.php` to demonstrate its structure.
+
+Here are the contents for the file `/laravelPair/laravelPair/app/Http/Requests/ExampleRequest.php`:
+
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class ExampleRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true; // Change this to implement authorization logic
+    }
+
+    public function rules()
+    {
+        return [
+            'field_name' => 'required|string|max:255', // Define your validation rules here
+        ];
+    }
+}
