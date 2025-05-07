@@ -1,7 +1,7 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+        <div class="flex justify-between h-14 sm:h-16">
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
@@ -16,6 +16,15 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                @auth
+                    <a href="{{ route('messages.index') }}" class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Messages</a>
+                @else
+                    <a href="{{ route('login') }}" class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Log in</a>
+                    <a href="{{ route('register') }}" class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm border border-transparent font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Register</a>
+                @endauth
             </div>
 
             <!-- Settings Dropdown -->
