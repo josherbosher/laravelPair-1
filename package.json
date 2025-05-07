@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
     "private": true,
     "type": "module",
     "engines": {
@@ -20,26 +19,3 @@
         "vite": "^4.0.0"
     }
 }
-=======
-  "name": "laravelPair",
-  "description": "A Laravel project named laravelPair.",
-  "type": "project",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "dev": "npm run development",
-    "development": "vite",
-    "build": "npm run production",
-    "production": "vite build",
-    "watch": "vite build --watch"
-  },
-  "devDependencies": {
-    "vite": "^4.0.0",
-    "laravel-vite-plugin": "^0.6.0"
-  },
-  "dependencies": {
-    "axios": "^0.21",
-    "lodash": "^4.17.21"
-  }
-}
->>>>>>> 7d69b11514b430ea87f7f50f50d9b0bc6435f0f3
