@@ -9,6 +9,8 @@ class UserController extends Controller
 {
     public function getUsers()
     {
-        return User::where('id', '!=', auth()->id())->get(['id', 'name', 'email']);
+        return User::where('id', '!=', auth()->id())
+            ->select(['id', 'name', 'email'])
+            ->get();
     }
 }

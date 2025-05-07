@@ -1,4 +1,123 @@
 <x-app-layout>
+    <!-- Add this script at the very top -->
+    <script>
+        // Make all functions globally available
+        window.startNewChat = function() {
+            document.getElementById('initial-prompt').remove();
+            showUserSelectionModal();
+        };
+
+        window.returnToDashboard = function() {
+            window.location.href = '{{ route("dashboard") }}';
+        };
+
+        window.showUserSelectionModal = async function() {
+            try {
+                const response = await fetch('{{ route("users.list") }}');
+                if (!response.ok) throw new Error('Failed to fetch users');
+                
+                const users = await response.json();
+                const usersList = document.getElementById('available-users-list');
+                
+                if (users.length === 0) {
+                    usersList.innerHTML = '<div class="text-center p-4 text-gray-500">No users available</div>';
+                } else {
+                    usersList.innerHTML = users.map(user => `
+                        <div class="flex items-center p-3 hover:bg-gray-50" data-user-id="${user.id}">
+                            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                                ${user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="font-medium">${user.name}</div>
+                                <div class="text-sm text-gray-500">${user.email}</div>
+                            </div>
+                            <button onclick="selectUser('${user.id}', '${user.name}')" 
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                                Add
+                            </button>
+                        </div>
+                    `).join('');
+                }
+                
+                document.getElementById('user-selection-modal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load users');
+            }
+        };
+
+        window.hideUserSelectionModal = function() {
+            document.getElementById('user-selection-modal').classList.add('hidden');
+        };
+
+        window.selectedUsers = [];
+
+        // Add userList to global scope
+        window.userList = null;
+
+        // Update DOMContentLoaded to set userList
+        document.addEventListener('DOMContentLoaded', function() {
+            window.userList = document.querySelector('.user-list');
+        });
+
+        window.selectUser = async function(userId, userName) {
+            try {
+                // Create chat in database first
+                const response = await fetch('{{ route("chats.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        users: [...selectedUsers, userId]
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to create chat');
+                const chat = await response.json();
+
+                // Only add user to UI if chat creation was successful
+                const userList = document.querySelector('.user-list');
+                const userElement = document.createElement('div');
+                userElement.className = 'p-4 hover:bg-gray-50 flex items-center justify-between border-b border-gray-200';
+                userElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold mr-3">
+                            ${userName.charAt(0).toUpperCase()}
+                        </div>
+                        <span class="font-medium">${userName}</span>
+                    </div>
+                `;
+                userList.appendChild(userElement);
+                selectedUsers.push(userId);
+                hideUserSelectionModal();
+                
+            } catch (error) {
+                console.error('Error creating chat:', error);
+                alert('Failed to create chat. Please try again.');
+            }
+        };
+    </script>
+
+    <!-- Initial Prompt Modal -->
+    <div id="initial-prompt" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 w-[32rem] text-center">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Start a New Chat?</h3>
+            <p class="text-gray-600 mb-6">Would you like to create a new chat and add users?</p>
+            <div class="flex justify-center gap-4">
+                <button onclick="startNewChat()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                    Create Chat
+                </button>
+                <button onclick="returnToDashboard()" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
     <div class="fixed inset-0 flex bg-gray-100">
         <!-- Back Button -->
         <a href="{{ route('dashboard') }}" class="absolute top-4 right-4 p-2 text-gray-600 hover:text-gray-900 z-10">
@@ -50,11 +169,11 @@
 
     <!-- User Selection Modal -->
     <div id="user-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-96 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Select Users</h3>
-                <button onclick="hideUserSelectionModal()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-lg p-8 w-[32rem] max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-800">Select Users</h3>
+                <button onclick="hideUserSelectionModal()" class="text-gray-500 hover:text-gray-700 p-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -67,97 +186,64 @@
 
     @push('scripts')
     <script>
-        // Websocket connection
-        let socket = new WebSocket('ws://localhost:3001');
-        
-        // UI Elements
-        const messageList = document.getElementById('message-list');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        const userSelectionModal = document.getElementById('user-selection-modal');
-        const availableUsersList = document.getElementById('available-users-list');
+        // Remove modal functions from here as they're now defined above
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI Elements
+            const messageList = document.getElementById('message-list');
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            const userSelectionModal = document.getElementById('user-selection-modal');
+            const availableUsersList = document.getElementById('available-users-list');
+            const userList = document.querySelector('.user-list');
 
-        // Message handling
-        messageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message) return;
+            // Websocket connection
+            let socket = new WebSocket('ws://localhost:3001');
+            
+            // Message handling
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (!message) return;
 
-            const messageData = {
-                id: Date.now(),
-                text: message,
-                sender: '{{ Auth::id() }}',
-                timestamp: new Date()
+                const messageData = {
+                    id: Date.now(),
+                    text: message,
+                    sender: '{{ Auth::id() }}',
+                    timestamp: new Date()
+                };
+
+                socket.send(JSON.stringify(messageData));
+                addMessage(messageData, true);
+                messageInput.value = '';
+            });
+
+            // Websocket event handlers
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                addMessage(message, false);
             };
 
-            socket.send(JSON.stringify(messageData));
-            addMessage(messageData, true);
-            messageInput.value = '';
-        });
+            function addMessage(message, isOwn) {
+                const noMessages = document.getElementById('no-messages');
+                if (noMessages) noMessages.remove();
 
-        // Websocket event handlers
-        socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            addMessage(message, false);
-        };
-
-        function addMessage(message, isOwn) {
-            const noMessages = document.getElementById('no-messages');
-            if (noMessages) noMessages.remove();
-
-            const messageElement = document.createElement('div');
-            messageElement.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`;
-            messageElement.innerHTML = `
-                <div class="max-w-[70%] ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200'} rounded-lg px-4 py-2">
-                    <p>${message.text}</p>
-                    <small class="text-xs opacity-75">
-                        ${new Date(message.timestamp).toLocaleTimeString()}
-                    </small>
-                </div>
-            `;
-            messageList.appendChild(messageElement);
-            messageList.scrollTop = messageList.scrollHeight;
-        }
-
-        async function showUserSelectionModal() {
-            try {
-                const response = await fetch('{{ route("users.list") }}');
-                const users = await response.json();
-                
-                availableUsersList.innerHTML = users.map(user => `
-                    <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer" onclick="selectUser('${user.id}', '${user.name}')">
-                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                            ${user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="ml-3">
-                            <div class="font-medium">${user.name}</div>
-                            <div class="text-sm text-gray-500">${user.email}</div>
-                        </div>
+                const messageElement = document.createElement('div');
+                messageElement.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`;
+                messageElement.innerHTML = `
+                    <div class="max-w-[70%] ${isOwn ? 'bg-blue-500 text-white' : 'bg-gray-200'} rounded-lg px-4 py-2">
+                        <p>${message.text}</p>
+                        <small class="text-xs opacity-75">
+                            ${new Date(message.timestamp).toLocaleTimeString()}
+                        </small>
                     </div>
-                `).join('');
-                
-                userSelectionModal.classList.remove('hidden');
-            } catch (error) {
-                console.error('Error fetching users:', error);
+                `;
+                messageList.appendChild(messageElement);
+                messageList.scrollTop = messageList.scrollHeight;
             }
-        }
-
-        function hideUserSelectionModal() {
-            userSelectionModal.classList.add('hidden');
-        }
-
-        function selectUser(userId, userName) {
-            const userElement = document.createElement('div');
-            userElement.className = 'p-4 hover:bg-gray-50 cursor-pointer flex items-center';
-            userElement.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold mr-3">
-                    ${userName.charAt(0).toUpperCase()}
-                </div>
-                <span>${userName}</span>
-            `;
-            userList.appendChild(userElement);
-            hideUserSelectionModal();
-        }
+        });
     </script>
     @endpush
+
+    <!-- Add CSRF token meta tag -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </x-app-layout>

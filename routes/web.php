@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MessagesController;
+use App\Http\Controllers\ChatController;
  
 use App\Http\Controllers\UserController;
 
@@ -22,7 +23,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/messages', [MessagesController::class, 'index'])->name('messages.index');
-    Route::get('/users', [UserController::class, 'getUsers'])->name('users.list');
+    Route::get('/users/list', [UserController::class, 'getUsers'])->name('users.list');
+    Route::post('/chats', [ChatController::class, 'store'])->name('chats.store');
 });
 
 require __DIR__.'/auth.php';
