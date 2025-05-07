@@ -10,7 +10,7 @@
 <body class="font-sans antialiased bg-gray-100 dark:bg-gray-900">
     <div class="min-h-screen">
         @include('layouts.navigation')
-        <main class="container mx-auto px-4 py-8">
+        <main class="container mx-auto px-4">
             {{ $slot }}
         </main>
     </div>
