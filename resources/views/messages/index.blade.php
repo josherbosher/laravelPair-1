@@ -1,4 +1,52 @@
 <x-app-layout>
+    <!-- Move this to the top, before any content -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal functions
+            window.showUserSelectionModal = async function() {
+                try {
+                    const response = await fetch('{{ route("users.list") }}');
+                    if (!response.ok) throw new Error('Failed to fetch users');
+                    
+                    const users = await response.json();
+                    const usersList = document.getElementById('available-users-list');
+                    
+                    if (users.length === 0) {
+                        usersList.innerHTML = '<div class="text-center p-4 text-gray-500">No users available</div>';
+                    } else {
+                        usersList.innerHTML = users.map(user => `
+                            <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer" 
+                                 onclick="selectUser('${user.id}', '${user.name}')">
+                                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="ml-3">
+                                    <div class="font-medium">${user.name}</div>
+                                    <div class="text-sm text-gray-500">${user.email}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    document.getElementById('user-selection-modal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to load users');
+                }
+            };
+
+            window.hideUserSelectionModal = function() {
+                const modal = document.getElementById('user-selection-modal');
+                modal.classList.add('hidden');
+            };
+
+            window.selectUser = function(userId, userName) {
+                // Existing selectUser code...
+                hideUserSelectionModal();
+            };
+        });
+    </script>
+
     <div class="fixed inset-0 flex bg-gray-100">
         <!-- Back Button -->
         <a href="{{ route('dashboard') }}" class="absolute top-4 right-4 p-2 text-gray-600 hover:text-gray-900 z-10">
@@ -50,11 +98,11 @@
 
     <!-- User Selection Modal -->
     <div id="user-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-96 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Select Users</h3>
-                <button onclick="hideUserSelectionModal()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-lg p-8 w-[32rem] max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-800">Select Users</h3>
+                <button onclick="hideUserSelectionModal()" class="text-gray-500 hover:text-gray-700 p-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -67,16 +115,17 @@
 
     @push('scripts')
     <script>
-        // Websocket connection
-        let socket = new WebSocket('ws://localhost:3001');
-        
         // UI Elements
         const messageList = document.getElementById('message-list');
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
         const userSelectionModal = document.getElementById('user-selection-modal');
         const availableUsersList = document.getElementById('available-users-list');
+        const userList = document.querySelector('.user-list');
 
+        // Websocket connection
+        let socket = new WebSocket('ws://localhost:3001');
+        
         // Message handling
         messageForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -117,46 +166,6 @@
             `;
             messageList.appendChild(messageElement);
             messageList.scrollTop = messageList.scrollHeight;
-        }
-
-        async function showUserSelectionModal() {
-            try {
-                const response = await fetch('{{ route("users.list") }}');
-                const users = await response.json();
-                
-                availableUsersList.innerHTML = users.map(user => `
-                    <div class="flex items-center p-3 hover:bg-gray-50 cursor-pointer" onclick="selectUser('${user.id}', '${user.name}')">
-                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                            ${user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="ml-3">
-                            <div class="font-medium">${user.name}</div>
-                            <div class="text-sm text-gray-500">${user.email}</div>
-                        </div>
-                    </div>
-                `).join('');
-                
-                userSelectionModal.classList.remove('hidden');
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
-        }
-
-        function hideUserSelectionModal() {
-            userSelectionModal.classList.add('hidden');
-        }
-
-        function selectUser(userId, userName) {
-            const userElement = document.createElement('div');
-            userElement.className = 'p-4 hover:bg-gray-50 cursor-pointer flex items-center';
-            userElement.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold mr-3">
-                    ${userName.charAt(0).toUpperCase()}
-                </div>
-                <span>${userName}</span>
-            `;
-            userList.appendChild(userElement);
-            hideUserSelectionModal();
         }
     </script>
     @endpush

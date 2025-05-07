@@ -22,7 +22,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/messages', [MessagesController::class, 'index'])->name('messages.index');
-    Route::get('/users', [UserController::class, 'getUsers'])->name('users.list');
+    Route::get('/users/list', [UserController::class, 'getUsers'])->name('users.list');
 });
 
 require __DIR__.'/auth.php';
