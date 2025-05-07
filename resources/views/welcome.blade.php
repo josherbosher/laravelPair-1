@@ -32,6 +32,8 @@
                                 <h1 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">ConnectMe</h1>
                             </div>
                             <div class="flex items-center space-x-4">
+                                <a href="#about" class="text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">About</a>
+                                <a href="{{ route('contact') }}" class="text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Contact</a>
                                 @auth
                                     <a href="{{ route('messages.index') }}" class="text-sm text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Messages</a>
                                     <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -106,6 +108,19 @@
                                 </dd>
                             </div>
                         </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Section -->
+            <div id="about" class="py-24 sm:py-32 bg-gray-50 dark:bg-gray-800">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="mx-auto max-w-2xl lg:text-center">
+                        <h2 class="text-base font-semibold leading-7 text-indigo-600 dark:text-indigo-400">About ConnectMe</h2>
+                        <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Our Mission</p>
+                        <p class="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
+                            ConnectMe is designed to make communication seamless and secure. Our platform brings people together through real-time messaging, ensuring your conversations are protected while maintaining an intuitive user experience.
+                        </p>
                     </div>
                 </div>
             </div>

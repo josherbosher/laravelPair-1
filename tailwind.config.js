@@ -21,5 +21,5 @@ export default {
     },
 
     plugins: [forms],
-    darkMode: 'media'
+    darkMode: 'class'
 };
