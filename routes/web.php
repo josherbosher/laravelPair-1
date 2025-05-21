@@ -5,6 +5,7 @@ use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\GroupController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -30,6 +31,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('/messages/{user}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/messages/{user}', [MessageController::class, 'store'])->name('messages.store');
+
+    // Group chat routes
+    Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
+    Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
+    Route::post('/groups', [GroupController::class, 'store'])->name('groups.store');
+    Route::post('/groups/{group}/message', [GroupController::class, 'sendMessage'])->name('groups.message');
+    Route::post('/groups/{group}/add-user', [GroupController::class, 'addUser'])->name('groups.addUser');
+    Route::post('/groups/{group}/remove-user', [GroupController::class, 'removeUser'])->name('groups.removeUser');
 });
 
 // Add contact routes

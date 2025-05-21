@@ -42,8 +42,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop child tables first to avoid foreign key constraint errors
+        Schema::dropIfExists('messages');
+        Schema::dropIfExists('group_user');
+        Schema::dropIfExists('groups');
+        Schema::dropIfExists('sessions');
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
     }
 };

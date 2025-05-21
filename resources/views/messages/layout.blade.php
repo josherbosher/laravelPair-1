@@ -11,7 +11,7 @@
     <div class="min-h-screen">
         @include('layouts.navigation')
         <main class="container mx-auto px-4 py-8">
-            {{ $slot }}
+            @yield('content')
         </main>
     </div>
 </body>
