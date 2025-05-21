@@ -12,7 +12,7 @@
             </h2>
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Messages</h3>
-                <div class="space-y-2 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div class="message-container space-y-2 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 max-h-[700px] overflow-y-auto relative" id="group-chat-messages-container">
                     @forelse($messages as $message)
                         <div class="flex items-start gap-3">
                             <span class="flex items-center cursor-pointer" onclick="showUserCard({{ $message->sender->id }})">
@@ -23,6 +23,9 @@
                                 @endif
                             </span>
                             <div class="rounded-lg px-4 py-2 max-w-[80%] break-words {{ $message->sender_id === auth()->id() ? 'bg-indigo-600 text-white' : 'bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-gray-100' }}">
+                                @if($message->image)
+                                    <img src="{{ asset('storage/' . $message->image) }}" alt="chat image" style="width:320px;height:320px;object-fit:cover;" class="rounded cursor-pointer mb-2" onclick="showImageModal('{{ asset('storage/' . $message->image) }}')">
+                                @endif
                                 <span class="font-semibold {{ $message->sender_id === auth()->id() ? 'text-white' : 'text-gray-900 dark:text-white' }}">{{ $message->sender->name }}</span>
                                 <span class="text-xs text-gray-400 ml-2">{{ $message->created_at->diffForHumans() }}</span>
                                 <div class="{{ $message->sender_id === auth()->id() ? 'text-white' : 'text-gray-800 dark:text-gray-200' }} break-words">{{ $message->content }}</div>
@@ -32,9 +35,13 @@
                         <p class="text-gray-500 dark:text-gray-400">No messages yet.</p>
                     @endforelse
                 </div>
-                <form method="POST" action="{{ route('groups.message', $group) }}" class="flex gap-2 mt-4">
+                <form method="POST" action="{{ route('groups.message', $group) }}" class="flex gap-2 mt-4 items-center" enctype="multipart/form-data">
                     @csrf
-                    <input type="text" name="content" placeholder="Type your message..." required class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <input type="text" name="content" placeholder="Type your message..." class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <label for="group-image-upload" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 text-white text-2xl font-bold cursor-pointer transition mr-2" title="Attach Image">
+                        +
+                        <input id="group-image-upload" type="file" name="image" accept="image/*" class="hidden" onchange="this.form.submit()">
+                    </label>
                     <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Send</button>
                 </form>
             </div>
@@ -87,6 +94,13 @@
     </div>
 </div>
 @endif
+<!-- Image Modal -->
+<div id="image-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 hidden">
+    <div class="relative">
+        <img id="modal-image" src="" alt="Full Image" class="max-h-[80vh] max-w-[90vw] rounded shadow-lg">
+        <button onclick="closeImageModal()" class="absolute top-2 right-2 text-white text-3xl">&times;</button>
+    </div>
+</div>
 <script>
     if(typeof users === 'undefined') {
         const users = @json($group->users->keyBy('id'));
@@ -120,5 +134,30 @@
     document.getElementById('user-card-modal').addEventListener('click', function(e) {
         if(e.target === this) closeUserCard();
     });
+    function showImageModal(src) {
+        document.getElementById('modal-image').src = src;
+        document.getElementById('image-modal').classList.remove('hidden');
+    }
+    function closeImageModal() {
+        document.getElementById('image-modal').classList.add('hidden');
+    }
+    document.getElementById('image-modal').addEventListener('click', function(e) {
+        if(e.target === this) closeImageModal();
+    });
+    // Scroll group chat to bottom on load and after sending a message
+    function scrollGroupChatToBottom() {
+        const container = document.getElementById('group-chat-messages-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', scrollGroupChatToBottom);
+    // Optional: scroll after sending a message
+    const groupChatForm = document.querySelector('form[action*="groups.message"]');
+    if (groupChatForm) {
+        groupChatForm.addEventListener('submit', function() {
+            setTimeout(scrollGroupChatToBottom, 100);
+        });
+    }
 </script>
 @endsection

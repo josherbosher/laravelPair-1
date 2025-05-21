@@ -14,6 +14,7 @@ class Message extends Model
         'receiver_id',
         'group_id',
         'content',
+        'image',
         'read_at'
     ];
 

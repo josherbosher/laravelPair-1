@@ -1,4 +1,6 @@
 .message-container {
+    overflow-y: auto;
+    width: 100%;
     scrollbar-width: thin;
     scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
@@ -52,4 +54,12 @@
 
 .oneonone-message-content {
     font-size: 1.15rem;
+}
+
+.chat-scroll-area {
+    max-height: 32rem;
+    min-height: 16rem;
+    overflow-y: auto;
+    width: 100%;
+    background: inherit;
 }

@@ -37,15 +37,22 @@ class MessageController extends Controller
     public function store(Request $request, User $user)
     {
         $request->validate([
-            'content' => 'required|string'
+            'content' => 'nullable|string',
+            'image' => 'nullable|image|max:4096',
         ]);
-
+        if (!$request->filled('content') && !$request->hasFile('image')) {
+            return back()->withErrors(['content' => 'Message or image required.']);
+        }
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('chat_images', 'public');
+        }
         Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $user->id,
-            'content' => $request->content
+            'content' => $request->content ?? '',
+            'image' => $imagePath,
         ]);
-
         return back();
     }
 }
