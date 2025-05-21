@@ -12,11 +12,17 @@ class MessageController extends Controller
     public function index()
     {
         $users = User::where('id', '!=', Auth::id())->get();
-        return view('messages.index', compact('users'));
+        $unreadCounts = [];
+        foreach ($users as $u) {
+            $unreadCounts[$u->id] = \App\Models\Message::unreadFor(Auth::id())->where('sender_id', $u->id)->count();
+        }
+        return view('messages.index', compact('users', 'unreadCounts'));
     }
 
     public function show(User $user)
     {
+        // Mark messages from this user as read
+        \App\Models\Message::markAsRead(Auth::id(), $user->id);
         $messages = Message::where(function($query) use ($user) {
             $query->where('sender_id', Auth::id())
                   ->where('receiver_id', $user->id);

@@ -33,4 +33,17 @@ class Message extends Model
     {
         return $this->belongsTo(Group::class);
     }
+
+    public function scopeUnreadFor($query, $userId)
+    {
+        return $query->where('receiver_id', $userId)->whereNull('read_at');
+    }
+
+    public static function markAsRead($userId, $senderId)
+    {
+        static::where('receiver_id', $userId)
+            ->where('sender_id', $senderId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+    }
 }

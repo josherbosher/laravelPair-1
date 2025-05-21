@@ -12,7 +12,7 @@
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 @forelse($groups as $group)
-                    <a href="{{ route('groups.show', $group) }}" class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-150 group">
+                    <a href="{{ route('groups.show', $group) }}" class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 transition duration-150 group @if(!empty($unreadGroupCounts[$group->id])) ring-2 ring-red-500 bg-red-50 dark:bg-red-900/30 @endif hover:bg-gray-50 dark:hover:bg-gray-700">
                         <div class="flex items-center space-x-4">
                             <div class="flex-shrink-0 h-12 w-12 rounded-full bg-green-600 dark:bg-green-500 flex items-center justify-center text-white font-bold text-lg">
                                 {{ strtoupper(substr($group->name, 0, 1)) }}

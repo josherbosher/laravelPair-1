@@ -1,11 +1,20 @@
 <x-messages.layout>
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg">
+    <div class="w-full flex justify-center">
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                        {{ $user->name }}
-                    </h2>
+                    <div class="flex items-center gap-3">
+                        @if($user->profile_picture)
+                            <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="{{ $user->name }}'s profile picture" class="h-10 w-10 rounded-full object-cover border border-gray-300 dark:border-gray-700 cursor-pointer" onclick="showUserCard({{ $user->id }})">
+                        @else
+                            <div class="h-10 w-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-lg cursor-pointer" onclick="showUserCard({{ $user->id }})">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                        @endif
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                            {{ $user->name }}
+                        </h2>
+                    </div>
                     <a href="{{ route('messages.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
                         Back to messages
                     </a>
@@ -13,14 +22,17 @@
 
                 <div class="space-y-4 mb-4 h-[32rem] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     @foreach($messages as $message)
-                        <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
-                            <div class="{{ $message->sender_id === auth()->id() 
-                                ? 'bg-indigo-600 text-white' 
-                                : 'bg-gray-500 dark:bg-gray-700 text-gray-900 dark:text-gray-100' }} rounded-lg px-4 py-2 max-w-sm">
-                                <p class="text-sm">{{ $message->content }}</p>
-                                <span class="text-xs {{ $message->sender_id === auth()->id() 
-                                    ? 'opacity-75' 
-                                    : 'text-gray-600 dark:text-gray-400' }}">{{ $message->created_at->format('g:i A') }}</span>
+                        <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }} items-center gap-3">
+                            @if($message->sender && $message->sender->profile_picture)
+                                <img src="{{ asset('storage/' . $message->sender->profile_picture) }}" alt="{{ $message->sender->name }}'s profile picture" class="h-10 w-10 rounded-full object-cover border border-gray-300 dark:border-gray-700 cursor-pointer" onclick="showUserCard({{ $message->sender->id }})">
+                            @elseif($message->sender)
+                                <div class="h-10 w-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold cursor-pointer" onclick="showUserCard({{ $message->sender->id }})">
+                                    {{ strtoupper(substr($message->sender->name, 0, 1)) }}
+                                </div>
+                            @endif
+                            <div class="{{ $message->sender_id === auth()->id() ? 'bg-indigo-600 text-white' : 'bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-gray-100' }} rounded-lg px-6 py-4 max-w-[65%] break-words">
+                                <p class="text-base break-words">{{ $message->content }}</p>
+                                <span class="text-xs {{ $message->sender_id === auth()->id() ? 'opacity-75' : 'text-gray-600 dark:text-gray-400' }}">{{ $message->created_at->format('g:i A') }}</span>
                             </div>
                         </div>
                     @endforeach
@@ -41,4 +53,45 @@
             </div>
         </div>
     </div>
+    <!-- User Card Modal (shared) -->
+    <div id="user-card-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-sm w-full relative">
+            <button onclick="closeUserCard()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">&times;</button>
+            <div id="user-card-content">
+                <!-- Content will be filled by JS -->
+            </div>
+        </div>
+    </div>
+    <script>
+        const users = @json([$user->id => $user] + $messages->pluck('sender')->keyBy('id')->toArray());
+        function showUserCard(userId) {
+            const user = users[userId];
+            let html = '';
+            html += `<div class='flex flex-col items-center gap-2'>`;
+            if(user.profile_picture) {
+                html += `<img src='${window.location.origin}/storage/${user.profile_picture}' alt='${user.name} profile picture' class='h-20 w-20 rounded-full object-cover border border-gray-300 dark:border-gray-700 mb-2'>`;
+            } else {
+                html += `<div class='h-20 w-20 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-2xl mb-2'>${user.name.charAt(0).toUpperCase()}</div>`;
+            }
+            html += `<div class='text-lg font-semibold text-gray-900 dark:text-white'>${user.name}</div>`;
+            if(user.pronouns) {
+                html += `<div class='text-xs text-indigo-600 dark:text-indigo-300 mb-1'>${user.pronouns}</div>`;
+            }
+            if(user.bio) {
+                html += `<div class='text-sm text-gray-700 dark:text-gray-200 mb-2 text-center'>${user.bio}</div>`;
+            }
+            html += `</div>`;
+            document.getElementById('user-card-content').innerHTML = html;
+            document.getElementById('user-card-modal').classList.remove('hidden');
+        }
+        function closeUserCard() {
+            document.getElementById('user-card-modal').classList.add('hidden');
+        }
+        document.addEventListener('keydown', function(e) {
+            if(e.key === 'Escape') closeUserCard();
+        });
+        document.getElementById('user-card-modal').addEventListener('click', function(e) {
+            if(e.target === this) closeUserCard();
+        });
+    </script>
 </x-messages.layout>

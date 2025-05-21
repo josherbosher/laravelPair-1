@@ -12,11 +12,23 @@ class GroupController extends Controller
     public function index()
     {
         $groups = Auth::user()->groups;
-        return view('messages.groups', compact('groups'));
+        $unreadGroupCounts = [];
+        foreach ($groups as $group) {
+            $unreadGroupCounts[$group->id] = $group->messages()
+                ->whereNull('read_at')
+                ->where('sender_id', '!=', Auth::id())
+                ->count();
+        }
+        return view('messages.groups', compact('groups', 'unreadGroupCounts'));
     }
 
     public function show(Group $group)
     {
+        // Mark all unread messages in this group as read for the current user
+        $group->messages()
+            ->whereNull('read_at')
+            ->where('sender_id', '!=', Auth::id())
+            ->update(['read_at' => now()]);
         $messages = $group->messages()->orderBy('created_at', 'asc')->get();
         return view('messages.group_show', compact('group', 'messages'));
     }

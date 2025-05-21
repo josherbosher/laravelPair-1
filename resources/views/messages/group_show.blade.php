@@ -15,17 +15,17 @@
                 <div class="space-y-2 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     @forelse($messages as $message)
                         <div class="flex items-start gap-3">
-                            @if($message->sender && $message->sender->profile_picture)
-                                <img src="{{ asset('storage/' . $message->sender->profile_picture) }}" alt="{{ $message->sender->name }}'s profile picture" class="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700">
-                            @else
-                                <div class="h-8 w-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold">
-                                    {{ strtoupper(substr($message->sender->name, 0, 1)) }}
-                                </div>
-                            @endif
-                            <div>
-                                <span class="font-semibold text-gray-900 dark:text-white">{{ $message->sender->name }}</span>
+                            <span class="flex items-center cursor-pointer" onclick="showUserCard({{ $message->sender->id }})">
+                                @if($message->sender && $message->sender->profile_picture)
+                                    <img src="{{ asset('storage/' . $message->sender->profile_picture) }}" alt="{{ $message->sender->name }}'s profile picture" class="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold">{{ strtoupper(substr($message->sender->name, 0, 1)) }}</div>
+                                @endif
+                            </span>
+                            <div class="rounded-lg px-4 py-2 max-w-[80%] break-words {{ $message->sender_id === auth()->id() ? 'bg-indigo-600 text-white' : 'bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-gray-100' }}">
+                                <span class="font-semibold {{ $message->sender_id === auth()->id() ? 'text-white' : 'text-gray-900 dark:text-white' }}">{{ $message->sender->name }}</span>
                                 <span class="text-xs text-gray-400 ml-2">{{ $message->created_at->diffForHumans() }}</span>
-                                <div class="text-gray-800 dark:text-gray-200">{{ $message->content }}</div>
+                                <div class="{{ $message->sender_id === auth()->id() ? 'text-white' : 'text-gray-800 dark:text-gray-200' }} break-words">{{ $message->content }}</div>
                             </div>
                         </div>
                     @empty
@@ -43,11 +43,13 @@
                 <ul class="flex flex-wrap gap-2 mb-2">
                     @foreach($group->users as $member)
                         <li class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                            @if($member->profile_picture)
-                                <img src="{{ asset('storage/' . $member->profile_picture) }}" alt="{{ $member->name }}'s profile picture" class="h-6 w-6 rounded-full object-cover border border-gray-300 dark:border-gray-700">
-                            @else
-                                <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-bold">{{ strtoupper(substr($member->name, 0, 1)) }}</span>
-                            @endif
+                            <span class="flex items-center cursor-pointer" onclick="showUserCard({{ $member->id }})">
+                                @if($member->profile_picture)
+                                    <img src="{{ asset('storage/' . $member->profile_picture) }}" alt="{{ $member->name }}'s profile picture" class="h-6 w-6 rounded-full object-cover border border-gray-300 dark:border-gray-700">
+                                @else
+                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 dark:bg-indigo-500 text-white text-xs font-bold">{{ strtoupper(substr($member->name, 0, 1)) }}</span>
+                                @endif
+                            </span>
                             <span class="font-medium text-gray-900 dark:text-white">{{ $member->name }}</span>
                             @if($member->id !== Auth::id())
                             <form method="POST" action="{{ route('groups.removeUser', $group) }}" class="inline">
@@ -74,4 +76,49 @@
         </div>
     </div>
 </div>
+<!-- User Card Modal (shared with index) -->
+@if(View::hasSection('user-card-modal') === false)
+<div id="user-card-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-sm w-full relative">
+        <button onclick="closeUserCard()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">&times;</button>
+        <div id="user-card-content">
+            <!-- Content will be filled by JS -->
+        </div>
+    </div>
+</div>
+@endif
+<script>
+    if(typeof users === 'undefined') {
+        const users = @json($group->users->keyBy('id'));
+    }
+    function showUserCard(userId) {
+        const user = users[userId];
+        let html = '';
+        html += `<div class='flex flex-col items-center gap-2'>`;
+        if(user.profile_picture) {
+            html += `<img src='${window.location.origin}/storage/${user.profile_picture}' alt='${user.name} profile picture' class='h-20 w-20 rounded-full object-cover border border-gray-300 dark:border-gray-700 mb-2'>`;
+        } else {
+            html += `<div class='h-20 w-20 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-2xl mb-2'>${user.name.charAt(0).toUpperCase()}</div>`;
+        }
+        html += `<div class='text-lg font-semibold text-gray-900 dark:text-white'>${user.name}</div>`;
+        if(user.pronouns) {
+            html += `<div class='text-xs text-indigo-600 dark:text-indigo-300 mb-1'>${user.pronouns}</div>`;
+        }
+        if(user.bio) {
+            html += `<div class='text-sm text-gray-700 dark:text-gray-200 mb-2 text-center'>${user.bio}</div>`;
+        }
+        html += `</div>`;
+        document.getElementById('user-card-content').innerHTML = html;
+        document.getElementById('user-card-modal').classList.remove('hidden');
+    }
+    function closeUserCard() {
+        document.getElementById('user-card-modal').classList.add('hidden');
+    }
+    document.addEventListener('keydown', function(e) {
+        if(e.key === 'Escape') closeUserCard();
+    });
+    document.getElementById('user-card-modal').addEventListener('click', function(e) {
+        if(e.target === this) closeUserCard();
+    });
+</script>
 @endsection
