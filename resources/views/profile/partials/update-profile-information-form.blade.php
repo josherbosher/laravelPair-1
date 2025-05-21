@@ -13,7 +13,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6" enctype="multipart/form-data">
         @csrf
         @method('patch')
 
@@ -44,6 +44,76 @@
                         </p>
                     @endif
                 </div>
+            @endif
+        </div>
+
+        <div>
+            <x-input-label for="profile_picture" :value="__('Profile Picture')" />
+            <input id="profile_picture" name="profile_picture" type="file" class="mt-1 block w-full text-gray-900 dark:text-white" accept="image/*" />
+            @if($user->profile_picture)
+                <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="Profile Picture" class="mt-2 w-20 h-20 rounded-full object-cover border border-gray-300 dark:border-gray-700">
+            @endif
+            <x-input-error class="mt-2" :messages="$errors->get('profile_picture')" />
+        </div>
+
+        <div>
+            <x-input-label for="pronouns" :value="__('Pronouns')" />
+            <x-text-input id="pronouns" name="pronouns" type="text" class="mt-1 block w-full" :value="old('pronouns', $user->pronouns)" autocomplete="pronouns" placeholder="e.g. she/her, he/him, they/them" />
+            <x-input-error class="mt-2" :messages="$errors->get('pronouns')" />
+        </div>
+
+        <div>
+            <x-input-label for="bio" :value="__('Bio')" />
+            <textarea id="bio" name="bio" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900 dark:text-white">{{ old('bio', $user->bio) }}</textarea>
+            <x-input-error class="mt-2" :messages="$errors->get('bio')" />
+        </div>
+
+        <div>
+            <x-input-label for="birth_date" :value="__('Birth Date')" />
+            @if(!$user->birth_date)
+                <div class="flex gap-2">
+                    <select id="birth_day" class="block w-1/4" required>
+                        <option value="">Day</option>
+                        @for($d = 1; $d <= 31; $d++)
+                            <option value="{{ $d }}">{{ $d }}</option>
+                        @endfor
+                    </select>
+                    <select id="birth_month" class="block w-1/4" required>
+                        <option value="">Month</option>
+                        @for($m = 1; $m <= 12; $m++)
+                            <option value="{{ $m }}">{{ DateTime::createFromFormat('!m', $m)->format('F') }}</option>
+                        @endfor
+                    </select>
+                    <select id="birth_year" class="block w-1/2" required>
+                        <option value="">Year</option>
+                        @for($y = date('Y')-10; $y >= date('Y')-100; $y--)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <input type="hidden" id="birth_date" name="birth_date" />
+                <x-input-error class="mt-2" :messages="$errors->get('birth_date')" />
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        function updateBirthDate() {
+                            const day = document.getElementById('birth_day').value;
+                            const month = document.getElementById('birth_month').value;
+                            const year = document.getElementById('birth_year').value;
+                            const hidden = document.getElementById('birth_date');
+                            if(day && month && year) {
+                                hidden.value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            } else {
+                                hidden.value = '';
+                            }
+                        }
+                        document.getElementById('birth_day').addEventListener('change', updateBirthDate);
+                        document.getElementById('birth_month').addEventListener('change', updateBirthDate);
+                        document.getElementById('birth_year').addEventListener('change', updateBirthDate);
+                    });
+                </script>
+            @else
+                <x-text-input id="birth_date" name="birth_date" type="date" class="mt-1 block w-full" :value="$user->birth_date" disabled />
+                <p class="text-xs text-gray-500 mt-1">Birth date can only be set once.</p>
             @endif
         </div>
 

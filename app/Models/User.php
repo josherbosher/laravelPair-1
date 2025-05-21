@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_picture',
+        'pronouns',
+        'bio',
+        'birth_date',
     ];
 
     /**
@@ -49,5 +53,10 @@ class User extends Authenticatable
     public function groups()
     {
         return $this->belongsToMany(Group::class);
+    }
+
+    public function getAgeAttribute()
+    {
+        return $this->birth_date ? \Carbon\Carbon::parse($this->birth_date)->age : null;
     }
 }
