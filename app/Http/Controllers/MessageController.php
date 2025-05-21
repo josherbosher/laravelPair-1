@@ -16,6 +16,10 @@ class MessageController extends Controller
         foreach ($users as $u) {
             $unreadCounts[$u->id] = \App\Models\Message::unreadFor(Auth::id())->where('sender_id', $u->id)->count();
         }
+        // Sort users: those with unread messages first
+        $users = $users->sortByDesc(function($user) use ($unreadCounts) {
+            return $unreadCounts[$user->id] > 0 ? 1 : 0;
+        })->values();
         return view('messages.index', compact('users', 'unreadCounts'));
     }
 
